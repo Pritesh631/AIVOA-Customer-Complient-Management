@@ -1,0 +1,3 @@
+import {configureStore, createSlice} from '@reduxjs/toolkit';
+const initial={page:'dashboard', complaints:[], analysis:null, form:{source:'Manual',customer_name:'',product_name:'',batch_number:'',dosage_form:'',market:'',complaint_date:'',description:''}, loading:false};
+const slice=createSlice({name:'app',initialState:initial,reducers:{setPage:(s,a)=>{s.page=a.payload},setForm:(s,a)=>{s.form={...s.form,...a.payload}},setAnalysis:(s,a)=>{s.analysis=a.payload},setComplaints:(s,a)=>{s.complaints=a.payload},setLoading:(s,a)=>{s.loading=a.payload},resetForm:s=>{s.form={...initial.form}}}}); export const {setPage,setForm,setAnalysis,setComplaints,setLoading,resetForm}=slice.actions; export const store=configureStore({reducer:slice.reducer});
