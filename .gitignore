@@ -3,5 +3,7 @@ backend/.env
 backend/aivoa.db
 frontend/node_modules/
 frontend/dist/
+frontend/.env
+frontend/.tsupgrader/
 __pycache__/
 *.pyc

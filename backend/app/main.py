@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pypdf import PdfReader
-from .config import FRONTEND_ORIGIN
+from .config import frontend_origins
 from .db import Base, engine, get_db
 from .models import Complaint
 from .schemas import ComplaintInput, AIAnalysis, ComplaintResponse
@@ -11,7 +11,8 @@ from .ai import analyze_complaint
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="AIVOA Complaint QMS API", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=[FRONTEND_ORIGIN, "http://localhost:5173"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+allowed_origins = frontend_origins()
+app.add_middleware(CORSMiddleware, allow_origins=allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 def number():
     return "CC-" + uuid.uuid4().hex[:8].upper()

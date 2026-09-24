@@ -3,6 +3,7 @@ from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
+from groq import APIError, APIConnectionError, RateLimitError, AuthenticationError, BadRequestError
 from .config import GROQ_API_KEY, GROQ_MODEL, MOCK_AI
 
 class GraphState(TypedDict, total=False):
@@ -27,12 +28,15 @@ def analyze_node(state: GraphState):
     c = state["complaint"]
     if MOCK_AI or not GROQ_API_KEY:
         return {"result": mock_result(c)}
-    llm = ChatGroq(model=GROQ_MODEL, temperature=0, api_key=GROQ_API_KEY)
-    system = SystemMessage(content="""You are a pharmaceutical QMS customer-complaint copilot. Analyze the complaint conservatively. Never invent facts. Return ONLY valid JSON with keys: extracted (object), summary (string), completeness_score (integer 0-100), missing_fields (array), risk_level (Low|Medium|High|Critical), risk_score (integer 0-100), risk_rationale (string), root_cause_recommendations (array of strings), capa_recommendations (array of strings), duplicate_risk (Low|Medium|High), duplicate_reason (string). Risk is a triage aid, not a final QA decision.""")
-    prompt = HumanMessage(content="Complaint data:\n" + json.dumps(c, ensure_ascii=False))
-    raw = llm.invoke([system, prompt]).content
-    text = raw.strip().replace("```json", "").replace("```", "").strip()
-    return {"result": json.loads(text)}
+    try:
+        llm = ChatGroq(model=GROQ_MODEL, temperature=0, api_key=GROQ_API_KEY)
+        system = SystemMessage(content="""You are a pharmaceutical QMS customer-complaint copilot. Analyze the complaint conservatively. Never invent facts. Return ONLY valid JSON with keys: extracted (object), summary (string), completeness_score (integer 0-100), missing_fields (array), risk_level (Low|Medium|High|Critical), risk_score (integer 0-100), risk_rationale (string), root_cause_recommendations (array of strings), capa_recommendations (array of strings), duplicate_risk (Low|Medium|High), duplicate_reason (string). Risk is a triage aid, not a final QA decision.""")
+        prompt = HumanMessage(content="Complaint data:\n" + json.dumps(c, ensure_ascii=False))
+        raw = llm.invoke([system, prompt]).content
+        text = raw.strip().replace("```json", "").replace("```", "").strip()
+        return {"result": json.loads(text)}
+    except (BadRequestError, APIError, APIConnectionError, RateLimitError, AuthenticationError, ValueError, TypeError, json.JSONDecodeError):
+        return {"result": mock_result(c)}
 
 def build_graph():
     g = StateGraph(GraphState)
